@@ -1,19 +1,35 @@
-name: GitHub Actions Demo
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
-on: [push]
+name: Promote staging to prod
+run-name: ${{ github.actor }} is promoting Staging to Prod 🚀
+on:
+  push:
+    branches:
+      - main
 jobs:
-  Explore-GitHub-Actions:
+  promote:
     runs-on: ubuntu-latest
+
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - name: Check out repository code
+      - name: Checkout code
         uses: actions/checkout@v3
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
+
+      - run: echo "🔎 Compare and sync directories"
+      - name: Compare and sync directories
         run: |
-          ls ${{ github.workspace }}
-      - run: echo "🍏 This job's status is ${{ job.status }}."
+          # Exclude the 'specific' directory and compare staging and prod
+          DIFF=$(rsync -rcn --exclude=specific ./staging/ ./prod/)
+          
+          # If DIFF is not empty, means there are differences
+          if [ -n "$DIFF" ]; then
+            # If there are differences, use rsync to copy files excluding 'specific' directory
+            rsync -rc --exclude=specific ./staging/ ./prod/
+          fi
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Sync staging to prod
+          title: Sync staging to prod
+          body: This PR is to sync the staging directory to the prod directory.
+          branch: sync-staging-to-prod
 
