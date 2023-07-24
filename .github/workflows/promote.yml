@@ -16,12 +16,12 @@ jobs:
       - name: Compare and sync directories
         run: |
           # Exclude the 'specific' directory and compare staging and prod
-          DIFF=$(rsync -rcn --exclude=specific ./staging/ ./prod/)
+          DIFF=$(rsync --stats --recursive --dry-run --exclude=specific ./staging/ ./prod/ | awk '/files transferred/{print $NF}')
           
-          # If DIFF is not empty, means there are differences
-          if [ -n "$DIFF" ]; then
-            # If there are differences, use rsync to copy files excluding 'specific' directory
-            rsync -rc --exclude=specific ./staging/ ./prod/
+          # If DIFF is not 0, means there are differences
+          if [ "$DIFF" -ne 0 ]; then
+            # If there are differences, use rsync to copy files excluding the 'specific' directory
+            rsync --checksum --recursive --exclude=specific ./staging/ ./prod/
           fi
 
       - name: Create Pull Request
