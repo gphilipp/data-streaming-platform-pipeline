@@ -1,0 +1,35 @@
+name: Promote staging to prod
+run-name: ${{ github.actor }} is promoting Staging to Prod 🚀
+on:
+  push:
+    branches:
+      - main
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - run: echo "🔎 Compare and sync directories"
+      - name: Compare and sync directories
+        run: |
+          # Exclude the 'specific' directory and compare staging and prod
+          DIFF=$(rsync -rcn --exclude=specific ./staging/ ./prod/)
+          
+          # If DIFF is not empty, means there are differences
+          if [ -n "$DIFF" ]; then
+            # If there are differences, use rsync to copy files excluding 'specific' directory
+            rsync -rc --exclude=specific ./staging/ ./prod/
+          fi
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Sync staging to prod
+          title: Sync staging to prod
+          body: This PR is to sync the staging directory to the prod directory.
+          branch: sync-staging-to-prod
+
