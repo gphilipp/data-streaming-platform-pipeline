@@ -16,17 +16,23 @@ env:
 
 jobs:
   terraform_data_streaming_platform:
-    needs: [lint]
     name: "Terraform Data Streaming Platform"
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
-        working-directory: ./
     steps:
       - name: Checkout the repository to the runner
         uses: actions/checkout@v2
+
+      - name: Get changed folder
+        id: getchange
+        run: |
+          echo "::set-output name=folder::$(git diff --dirstat=files,0 HEAD~1..HEAD | awk '{print $2}')"
+
+      - name: CD into changed folder
+        run: cd ${{ steps.getchange.outputs.folder }}
 
       - name: Setup Terraform with specified version on the runner
         uses: hashicorp/setup-terraform@v2
