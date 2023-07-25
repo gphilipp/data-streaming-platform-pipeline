@@ -1,9 +1,10 @@
 name: Run Terraform
 
 on:
-  pull_request:
-    types:
-      - closed
+  push:
+    branches:
+      - '**'
+      - '!main'
 
 env:
   # verbosity setting for Terraform logs
@@ -15,36 +16,36 @@ env:
   BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE}}
 
 jobs:
-#  tflint:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v3
-#        name: Checkout source code
-#
-#      - uses: actions/cache@v3
-#        name: Cache plugin dir
-#        with:
-#          path: ~/.tflint.d/plugins
-#          key: tflint-${{ hashFiles('.tflint.hcl') }}
-#
-#      - uses: terraform-linters/setup-tflint@v3
-#        name: Setup TFLint
-#        with:
-#          tflint_version: v0.44.1
-#
-#      - name: Show version
-#        run: tflint --version
-#
-#      - name: Init TFLint
-#        run: tflint --init
-#        env:
-#          # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
-#          GITHUB_TOKEN: ${{ github.token }}
-#
-#      - name: Run TFLint
-#        run: tflint -f compact
+  tflint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        name: Checkout source code
 
-  Terraform:
+      - uses: actions/cache@v3
+        name: Cache plugin dir
+        with:
+          path: ~/.tflint.d/plugins
+          key: tflint-${{ hashFiles('.tflint.hcl') }}
+
+      - uses: terraform-linters/setup-tflint@v3
+        name: Setup TFLint
+        with:
+          tflint_version: v0.44.1
+
+      - name: Show version
+        run: tflint --version
+
+      - name: Init TFLint
+        run: tflint --init
+        env:
+          # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Run TFLint
+        run: tflint -f compact
+
+  terraform_data_streaming_platform:
     name: "Terraform Data Streaming Platform"
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
@@ -113,34 +114,5 @@ jobs:
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: terraform apply -auto-approve -input=false
-
-  promote:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - run: echo "🔎 Compare and sync directories"
-      - name: Compare and sync directories
-        run: |
-          # Exclude the 'specific' directory and compare staging and prod
-          DIFF=$(rsync --stats --recursive --dry-run --exclude=specific ./staging/ ./prod/ | awk '/files transferred/{print $NF}')
-
-          # If DIFF is not 0, means there are differences
-          if [ "$DIFF" -ne 0 ]; then
-            # If there are differences, use rsync to copy files excluding the 'specific' directory
-            rsync --checksum --recursive --exclude=specific ./staging/ ./prod/
-          fi
-
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: Sync staging to prod
-          title: Sync staging to prod
-          body: This PR is to sync the staging directory to the prod directory.
-          branch: sync-staging-to-prod
-
-
         
           
