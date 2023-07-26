@@ -1,10 +1,10 @@
 name: CI
 
 on:
-#  push:
-#    branches:
-#      - '**'
-#      - '!main'
+  push:
+    branches:
+      - '**'
+      - '!main'
   pull_request:
     types:
       - opened
@@ -16,7 +16,10 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   # S3 bucket for the Terraform state
-  BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE}}
+  TF_BUCKET_STATE: ${{ secrets.TF_BUCKET_STATE}}
+  # Credentials for Confluent Cloud
+  TF_VAR_CONFLUENT_CLOUD_API_KEY: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_KEY }}
+  TF_VAR_CONFLUENT_CLOUD_API_SECRET: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_SECRET }}
 
 jobs:
   lint:
@@ -67,7 +70,7 @@ jobs:
 
       - name: Terraform init
         id: init
-        run: terraform init -backend-config="bucket=$BUCKET_TF_STATE"
+        run: terraform init -backend-config="bucket=$TF_BUCKET_STATE"
 
       - name: Terraform validate
         id: validate
@@ -76,7 +79,7 @@ jobs:
       - name: Terraform plan
         id: plan
         if: github.event_name == 'pull_request'
-        run: terraform plan -no-color -input=false
+        run: terraform plan -no-color -input=false -var="confluent_cloud_api_key=$TF_VAR_CONFLUENT_CLOUD_API_KEY -var="confluent_cloud_api_secret=$TF_VAR_CONFLUENT_CLOUD_API_SECRET"
         continue-on-error: true
 
       - uses: actions/github-script@v6
