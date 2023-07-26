@@ -10,9 +10,10 @@ terraform {
 
 terraform {
   backend "s3" {
-    bucket = "terraform-state-data-streaming-platform"
-    key    = "platform-eng/infra/"
+    bucket = "platform-engineering-terraform-state"
+    key    = "terraform/all-state/data-streaming-platform.tfstate"
     region = "us-east-1"
+    encrypt = true
   }
 }
 
