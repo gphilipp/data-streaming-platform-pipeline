@@ -8,6 +8,15 @@ terraform {
   }
 }
 
+terraform {
+  backend "s3" {
+    bucket = "platform-engineering-terraform-state"
+    key    = "terraform/all-state/data-streaming-platform.tfstate"
+    region = "us-east-1"
+    encrypt = true
+  }
+}
+
 variable "confluent_cloud_api_key" {
   description = "Confluent Cloud API Key (also referred as Cloud API ID)"
   type        = string

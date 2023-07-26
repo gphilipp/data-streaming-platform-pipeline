@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - main
+
 jobs:
   promote:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -32,4 +32,3 @@ jobs:
           title: Sync staging to prod
           body: This PR is to sync the staging directory to the prod directory.
           branch: sync-staging-to-prod
-
