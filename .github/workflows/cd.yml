@@ -55,7 +55,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform workspace
-        id: validate
+        id: workspace
         run: terraform workspace select ${{ matrix.environment }}
 
       - name: Terraform plan
