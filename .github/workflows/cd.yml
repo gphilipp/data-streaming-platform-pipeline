@@ -21,21 +21,25 @@ jobs:
   terraform_data_streaming_platform:
     name: "Terraform Data Streaming Platform"
     if: github.event.pull_request.merged == true
+    strategy:
+      matrix:
+        environment: [ staging, prod ]
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
+        working-directory: ${{ matrix.environment }}
     steps:
       - name: Checkout the repository to the runner
         uses: actions/checkout@v2
 
-      - name: Get changed folder
-        id: getchange
-        run: |
-          echo "::set-output name=folder::$(git diff --dirstat=files,0 HEAD~1..HEAD | awk '{print $2}')"
+#      - name: Get changed folder
+#        id: getchange
+#        run: |
+#          echo "::set-output name=folder::$(git diff --dirstat=files,0 HEAD~1..HEAD | awk '{print $2}')"
 
-      - name: CD into changed folder
-        run: cd ${{ steps.getchange.outputs.folder }}
+#      - name: CD into changed folder
+#        run: cd ${{ steps.getchange.outputs.folder }}
 
       - name: Setup Terraform with specified version on the runner
         uses: hashicorp/setup-terraform@v2
@@ -49,6 +53,10 @@ jobs:
       - name: Terraform validate
         id: validate
         run: terraform validate
+
+      - name: Terraform workspace
+        id: validate
+        run: terraform workspace select ${{ matrix.environment }}
 
       - name: Terraform plan
         id: plan
