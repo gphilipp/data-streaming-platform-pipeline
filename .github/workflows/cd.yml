@@ -65,7 +65,9 @@ jobs:
 
       - name: Terraform workspace
         id: workspace
-        run: terraform workspace select ${{ matrix.environment }}
+        run: |
+          cd ${{ matrix.environment }}
+          terraform workspace select ${{ matrix.environment }}
 
       - name: Terraform plan
         id: plan
