@@ -34,7 +34,7 @@ jobs:
         run: |
           echo "github.event.pull_request.merged           : ${{ github.event.pull_request.merged }}"
           echo "github.event.pull_request.merged == 'true' : ${{ github.event.pull_request.merged == 'true' }}"
-          echo "github.event.pull_request.merged  == true  : ${{ github.event.pull_request.merged == true }}
+          echo "github.event.pull_request.merged  == true  : ${{ github.event.pull_request.merged == true }}"
 
       - name: Checkout the repository to the runner
         uses: actions/checkout@v3
