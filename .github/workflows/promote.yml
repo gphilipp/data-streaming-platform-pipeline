@@ -32,6 +32,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: Sync staging to prod
-          title: "Sync staging to prod $NOW"
+          title: "Sync staging to prod ${{env.NOW}}"
           body: This PR is to sync the staging directory to the prod directory.
-          branch: "sync-staging-to-prod-$NOW"
+          branch: "sync-staging-to-prod-${{env.NOW}}"
