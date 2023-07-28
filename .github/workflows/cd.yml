@@ -28,7 +28,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: ${{ matrix.environment }}
+        working-directory: "./${{ matrix.environment }}"
     steps:
       - name: Debug
         run: |
