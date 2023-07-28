@@ -22,6 +22,7 @@ jobs:
     name: "Terraform Data Streaming Platform"
     #if: github.event.pull_request.merged
     strategy:
+      max-parallel: 1
       matrix:
         environment: [ staging, prod ]
     runs-on: ubuntu-latest
@@ -57,7 +58,7 @@ jobs:
 
       - name: Terraform init
         id: init
-        run: terraform init -backend-config="bucket=$TF_BUCKET_STATE"
+        run: terraform init -input=false -backend-config="bucket=$TF_BUCKET_STATE"
         working-directory: ${{ matrix.environment }}
 
       - name: Terraform validate
