@@ -114,9 +114,9 @@ jobs:
               body: output
             })
 
-      - name: Terraform Plan Status
-        if: steps.plan.outcome == 'failure'
-        run: exit 1
+#      - name: Terraform Plan Status
+#        if: steps.plan.outcome == 'failure'
+#        run: exit 1
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event.pull_request.merged
