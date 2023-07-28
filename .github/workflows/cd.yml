@@ -38,8 +38,6 @@ jobs:
 
       - name: Checkout the repository to the runner
         uses: actions/checkout@v3
-        with:
-          path: ''
 
       - name: List files
         run: ls -l
@@ -60,24 +58,24 @@ jobs:
       - name: Terraform init
         id: init
         run: terraform init -backend-config="bucket=$TF_BUCKET_STATE"
-        working-directory: "${{ matrix.environment }}"
+        working-directory: "${{ github.event.repository.name }}/${{ matrix.environment }}"
 
       - name: Terraform validate
         id: validate
         run: terraform validate
-        working-directory: "${{ matrix.environment }}"
+        working-directory: "${{ github.event.repository.name }}/${{ matrix.environment }}"
 
       - name: Terraform workspace
         id: workspace
         run: terraform workspace select ${{ matrix.environment }}
-        working-directory: "${{ matrix.environment }}"
+        working-directory: "${{ github.event.repository.name }}/${{ matrix.environment }}"
 
       - name: Terraform plan
         id: plan
 #        if: github.event_name == 'pull_request'
         run: terraform plan -no-color -input=false -var="confluent_cloud_api_key=$TF_VAR_CONFLUENT_CLOUD_API_KEY -var="confluent_cloud_api_secret=$TF_VAR_CONFLUENT_CLOUD_API_SECRET"
         continue-on-error: true
-        working-directory: "${{ matrix.environment }}"
+        working-directory: "${{ github.event.repository.name }}/${{ matrix.environment }}"
 
       - uses: actions/github-script@v6
 #        if: github.event_name == 'pull_request'
