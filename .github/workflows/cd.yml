@@ -93,7 +93,7 @@ jobs:
         with:
           script: |
             const output = `#### Terraform Format and Style 🖌
-            #### Environment ${{ matrix.environment }}
+            #### Environment ${{ matrix.environment }} (CD)
             #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
             #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
             #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
