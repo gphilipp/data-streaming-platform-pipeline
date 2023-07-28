@@ -24,11 +24,14 @@ jobs:
             rsync --checksum --recursive --exclude=specific ./staging/ ./prod/
           fi
 
+      - name: Set current date as env variable
+        run: echo "NOW=$(date +'%Y-%m-%d-%H%M%S')" >> $GITHUB_ENV
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: Sync staging to prod
-          title: Sync staging to prod
+          title: Sync staging to prod $NOW
           body: This PR is to sync the staging directory to the prod directory.
-          branch: sync-staging-to-prod
+          branch: sync-staging-to-prod-$NOW
