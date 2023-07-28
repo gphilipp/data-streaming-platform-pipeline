@@ -20,7 +20,7 @@ env:
 jobs:
   terraform_data_streaming_platform:
     name: "Terraform Data Streaming Platform"
-    if: github.event.pull_request.merged == true
+    #if: github.event.pull_request.merged
     strategy:
       matrix:
         environment: [ staging, prod ]
@@ -30,8 +30,17 @@ jobs:
         shell: bash
         working-directory: ${{ matrix.environment }}
     steps:
+      - name: Debug
+        run: |
+          echo "github.event.pull_request.merged           : $MERGED_RAW"
+          echo "github.event.pull_request.merged == 'true' : $MERGED_TRUE_STR"
+          echo "github.event.pull_request.merged  == true  : $MERGED_TRUE_BOOL"
       - name: Checkout the repository to the runner
         uses: actions/checkout@v2
+        env:
+          MERGED_RAW: ${{ github.event.pull_request.merged }}
+          MERGED_TRUE_STR: ${{ github.event.pull_request.merged == 'true' }}
+          MERGED_TRUE_BOOL: ${{ github.event.pull_request.merged == true }}
 
 #      - name: Get changed folder
 #        id: getchange
