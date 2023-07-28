@@ -25,22 +25,19 @@ jobs:
       matrix:
         environment: [ staging, prod ]
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-#        working-directory: "./${{ matrix.environment }}"
+#    defaults:
+#      run:
+#        shell: bash
+#        working-directory: "${{ matrix.environment }}"
     steps:
       - name: Debug
         run: |
-          echo "github.event.pull_request.merged           : $MERGED_RAW"
-          echo "github.event.pull_request.merged == 'true' : $MERGED_TRUE_STR"
-          echo "github.event.pull_request.merged  == true  : $MERGED_TRUE_BOOL"
+          echo "github.event.pull_request.merged           : ${{ github.event.pull_request.merged }}"
+          echo "github.event.pull_request.merged == 'true' : ${{ github.event.pull_request.merged == 'true' }}"
+          echo "github.event.pull_request.merged  == true  : ${{ github.event.pull_request.merged == true }}
+
       - name: Checkout the repository to the runner
-        uses: actions/checkout@v2
-        env:
-          MERGED_RAW: ${{ github.event.pull_request.merged }}
-          MERGED_TRUE_STR: ${{ github.event.pull_request.merged == 'true' }}
-          MERGED_TRUE_BOOL: ${{ github.event.pull_request.merged == true }}
+        uses: actions/checkout@v3
 
 #      - name: Get changed folder
 #        id: getchange
@@ -58,25 +55,27 @@ jobs:
       - name: Terraform init
         id: init
         run: terraform init -backend-config="bucket=$TF_BUCKET_STATE"
+        working-directory: "${{ matrix.environment }}"
 
       - name: Terraform validate
         id: validate
         run: terraform validate
+        working-directory: "${{ matrix.environment }}"
 
       - name: Terraform workspace
         id: workspace
-        run: |
-          cd ${{ matrix.environment }}
-          terraform workspace select ${{ matrix.environment }}
+        run: terraform workspace select ${{ matrix.environment }}
+        working-directory: "${{ matrix.environment }}"
 
       - name: Terraform plan
         id: plan
-        if: github.event_name == 'pull_request'
+#        if: github.event_name == 'pull_request'
         run: terraform plan -no-color -input=false -var="confluent_cloud_api_key=$TF_VAR_CONFLUENT_CLOUD_API_KEY -var="confluent_cloud_api_secret=$TF_VAR_CONFLUENT_CLOUD_API_SECRET"
         continue-on-error: true
+        working-directory: "${{ matrix.environment }}"
 
       - uses: actions/github-script@v6
-        if: github.event_name == 'pull_request'
+#        if: github.event_name == 'pull_request'
         env:
           PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
         with:
