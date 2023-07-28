@@ -16,6 +16,7 @@ env:
   # Credentials for Confluent Cloud
   TF_VAR_CONFLUENT_CLOUD_API_KEY: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_KEY }}
   TF_VAR_CONFLUENT_CLOUD_API_SECRET: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_SECRET }}
+  TF_IN_AUTOMATION: true
 
 jobs:
   terraform_data_streaming_platform:
