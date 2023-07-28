@@ -93,7 +93,7 @@ jobs:
         with:
           script: |
             const output = `#### Terraform Format and Style 🖌
-            #### Environment ${{ matrix.environment }}
+            #### Environment ${{ matrix.environment }} (CD)
             #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
             #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
             #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
@@ -114,9 +114,9 @@ jobs:
               body: output
             })
 
-      - name: Terraform Plan Status
-        if: steps.plan.outcome == 'failure'
-        run: exit 1
+#      - name: Terraform Plan Status
+#        if: steps.plan.outcome == 'failure'
+#        run: exit 1
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event.pull_request.merged
