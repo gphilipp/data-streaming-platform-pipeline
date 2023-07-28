@@ -38,6 +38,11 @@ jobs:
 
       - name: Checkout the repository to the runner
         uses: actions/checkout@v3
+        with:
+          path: ''
+
+      - name: List files
+        run: ls -l
 
 #      - name: Get changed folder
 #        id: getchange
