@@ -67,7 +67,7 @@ jobs:
 
       - name: Terraform workspace
         id: workspace
-        run: terraform workspace select ${{ matrix.environment }}
+        run: terraform workspace select -or-create ${{ matrix.environment }}
         working-directory: ${{ matrix.environment }}
 
       - name: Terraform plan
