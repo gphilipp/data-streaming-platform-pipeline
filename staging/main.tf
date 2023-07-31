@@ -91,7 +91,7 @@ resource "confluent_api_key" "platform-manager-kafka-api-key" {
     kind        = confluent_kafka_cluster.standard.kind
 
     environment {
-      id = confluent_environment.staging.id
+      id = confluent_environment.env.id
     }
   }
   # The goal is to ensure that confluent_role_binding.app-manager-kafka-cluster-admin is created before
