@@ -1,10 +1,11 @@
 name: CD
 
-
 on:
   pull_request:
     types:
       - closed
+    paths-ignore:
+      - '**/README.md'
 
 env:
   # verbosity setting for Terraform logs
