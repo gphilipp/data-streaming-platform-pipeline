@@ -51,7 +51,7 @@ jobs:
 
   terraform_plan:
     needs: [lint]
-    name: "Terraform Data Streaming Platform on Staging"
+    name: "Terraform Plan"
     runs-on: ubuntu-latest
     defaults:
       run:
