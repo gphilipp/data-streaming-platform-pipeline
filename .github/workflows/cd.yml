@@ -21,8 +21,8 @@ env:
   TF_IN_AUTOMATION: true
 
 jobs:
-  terraform_data_streaming_platform:
-    name: "Terraform Data Streaming Platform"
+  deploy_streaming_platform:
+    name: "Deploy ${{ matrix.environment }} Platform"
     if: github.event.pull_request.merged
     strategy:
       max-parallel: 1
