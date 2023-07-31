@@ -41,7 +41,6 @@ provider "confluent" {
 
 resource "confluent_environment" "env" {
   display_name = var.confluent_cloud_environment_name
-
   /*lifecycle {
     prevent_destroy = true
   }*/
@@ -65,7 +64,7 @@ resource "confluent_kafka_cluster" "standard" {
 
 
 resource "confluent_service_account" "platform-manager" {
-  display_name = "platform-manager"
+  display_name = "platform-manager-${confluent_environment.env.id}"
   description  = "Service account to manage the platform"
 }
 
