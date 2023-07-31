@@ -22,7 +22,7 @@ env:
 
 jobs:
   deploy_streaming_platform:
-    name: "Deploy ${{ matrix.environment }} Platform"
+    name: "Deploy ${{ matrix.environment }} platform"
     if: github.event.pull_request.merged
     strategy:
       max-parallel: 1
