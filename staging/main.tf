@@ -64,7 +64,7 @@ resource "confluent_kafka_cluster" "standard" {
 
 
 resource "confluent_service_account" "platform-manager" {
-  display_name = "platform-manager-${confluent_environment.env.id}"
+  display_name = "platform-manager-${confluent_environment.env.display_name}"
   description  = "Service account to manage the platform"
 }
 
