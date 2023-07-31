@@ -119,6 +119,6 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'main' && github.event.pull_request.merged
-        run: terraform apply -auto-approve -input=false
+        run: terraform apply -auto-approve -input=false -var="confluent_cloud_api_key=$TF_VAR_CONFLUENT_CLOUD_API_KEY" -var="confluent_cloud_api_secret=$TF_VAR_CONFLUENT_CLOUD_API_SECRET"
 
 
