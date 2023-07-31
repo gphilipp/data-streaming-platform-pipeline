@@ -118,7 +118,7 @@ jobs:
 #        run: exit 1
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event.pull_request.merged
+        if: github.ref == 'main' && github.event.pull_request.merged
         run: terraform apply -auto-approve -input=false
 
 
