@@ -37,18 +37,8 @@ jobs:
 #        shell: bash
 #        working-directory: ${{ matrix.environment }}
     steps:
-      - name: Debug
-        run: |
-          echo "github.event_name                : ${{ github.event_name}}"
-          echo "github.event.pull_request.number : ${{ github.event.pull_request.number }}"
-          echo "github.event.pull_request.merged : ${{ github.event.pull_request.merged }}"
-          echo "github.ref  : ${{ github.ref }}"
-
       - name: Checkout the repository to the runner
         uses: actions/checkout@v3
-
-      - name: List files
-        run: ls -l
 
       - name: Check terraform files existence
         id: check_files
@@ -56,7 +46,6 @@ jobs:
         with:
           files: "${{ matrix.environment }}/*.tf"
           fail: true
-
 
       - name: Setup Terraform with specified version on the runner
         uses: hashicorp/setup-terraform@v2
