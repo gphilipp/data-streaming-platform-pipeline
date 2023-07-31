@@ -1,5 +1,5 @@
 name: Promote staging to prod
-run-name: ${{ github.actor }} is promoting Staging to Prod 🚀
+run-name: ${{ github.actor }} wants to promote Staging to Prod 🚀
 on:
   push:
     branches:
