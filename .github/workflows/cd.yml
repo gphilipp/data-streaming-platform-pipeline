@@ -50,15 +50,6 @@ jobs:
       - name: List files
         run: ls -l
 
-#      - name: Get changed folder
-#        id: getchange
-#        run: |
-#          echo "::set-output name=folder::$(git diff --dirstat=files,0 HEAD~1..HEAD | awk '{print $2}')"
-
-#      - name: CD into changed folder
-#        run: cd ${{ steps.getchange.outputs.folder }}
-
-
       - name: Check terraform files existence
         id: check_files
         uses: andstor/file-existence-action@v2
@@ -122,10 +113,6 @@ jobs:
               repo: context.repo.repo,
               body: output
             })
-
-#      - name: Terraform Plan Status
-#        if: steps.plan.outcome == 'failure'
-#        run: exit 1
 
       - name: Terraform Apply
         if: github.ref == 'main' && github.event.pull_request.merged
