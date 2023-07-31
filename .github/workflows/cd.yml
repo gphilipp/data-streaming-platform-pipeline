@@ -39,11 +39,10 @@ jobs:
     steps:
       - name: Debug
         run: |
-          echo "github.event_name                          : ${{ github.event_name}}"
-          echo "github.event.pull_request.number           : ${{ github.event.pull_request.number }}"
-          echo "github.event.pull_request.merged           : ${{ github.event.pull_request.merged }}"
-          echo "github.event.pull_request.merged == 'true' : ${{ github.event.pull_request.merged == 'true' }}"
-          echo "github.event.pull_request.merged  == true  : ${{ github.event.pull_request.merged == true }}"
+          echo "github.event_name                : ${{ github.event_name}}"
+          echo "github.event.pull_request.number : ${{ github.event.pull_request.number }}"
+          echo "github.event.pull_request.merged : ${{ github.event.pull_request.merged }}"
+          echo "github.ref  : ${{ github.ref }}"
 
       - name: Checkout the repository to the runner
         uses: actions/checkout@v3
