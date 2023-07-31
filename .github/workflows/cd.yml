@@ -29,10 +29,6 @@ jobs:
       matrix:
         environment: [ staging, prod ]
     runs-on: ubuntu-latest
-#    defaults:
-#      run:
-#        shell: bash
-#        working-directory: ${{ matrix.environment }}
     steps:
       - name: Checkout the repository to the runner
         uses: actions/checkout@v3
