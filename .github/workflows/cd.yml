@@ -1,9 +1,5 @@
 name: CD
 
-#on:
-#  push:
-#    branches:
-#      - 'main'
 
 on:
   pull_request:
