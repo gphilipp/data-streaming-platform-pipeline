@@ -1,14 +1,11 @@
 name: CD
 
-#on:
-#  push:
-#    branches:
-#      - 'main'
-
 on:
   pull_request:
     types:
       - closed
+    paths-ignore:
+      - '**/README.md'
 
 env:
   # verbosity setting for Terraform logs
@@ -37,27 +34,8 @@ jobs:
 #        shell: bash
 #        working-directory: ${{ matrix.environment }}
     steps:
-      - name: Debug
-        run: |
-          echo "github.event_name                : ${{ github.event_name}}"
-          echo "github.event.pull_request.number : ${{ github.event.pull_request.number }}"
-          echo "github.event.pull_request.merged : ${{ github.event.pull_request.merged }}"
-          echo "github.ref  : ${{ github.ref }}"
-
       - name: Checkout the repository to the runner
         uses: actions/checkout@v3
-
-      - name: List files
-        run: ls -l
-
-#      - name: Get changed folder
-#        id: getchange
-#        run: |
-#          echo "::set-output name=folder::$(git diff --dirstat=files,0 HEAD~1..HEAD | awk '{print $2}')"
-
-#      - name: CD into changed folder
-#        run: cd ${{ steps.getchange.outputs.folder }}
-
 
       - name: Check terraform files existence
         id: check_files
@@ -65,7 +43,6 @@ jobs:
         with:
           files: "${{ matrix.environment }}/*.tf"
           fail: true
-
 
       - name: Setup Terraform with specified version on the runner
         uses: hashicorp/setup-terraform@v2
@@ -122,10 +99,6 @@ jobs:
               repo: context.repo.repo,
               body: output
             })
-
-#      - name: Terraform Plan Status
-#        if: steps.plan.outcome == 'failure'
-#        run: exit 1
 
       - name: Terraform Apply
         if: github.ref == 'main' && github.event.pull_request.merged

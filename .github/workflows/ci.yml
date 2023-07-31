@@ -1,14 +1,12 @@
 name: CI
 
 on:
-#  push:
-#    branches:
-#      - '**'
-#      - '!main'
   pull_request:
     types:
       - opened
       - synchronize
+    paths-ignore:
+      - '**/README.md'
 
 env:
   # verbosity setting for Terraform logs
@@ -46,7 +44,6 @@ jobs:
       - name: Init TFLint
         run: tflint --init
         env:
-          # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Run TFLint
