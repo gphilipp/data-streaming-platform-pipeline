@@ -29,14 +29,18 @@ variable "confluent_cloud_api_secret" {
   sensitive = "true"
 }
 
+variable "confluent_cloud_environment_name" {
+  default = "unnamed"
+}
+
 provider "confluent" {
   cloud_api_key       = var.confluent_cloud_api_key
   cloud_api_secret    = var.confluent_cloud_api_secret
 }
 
 
-resource "confluent_environment" "staging" {
-  display_name = "Staging"
+resource "confluent_environment" "env" {
+  display_name = var.confluent_cloud_environment_name
 
   /*lifecycle {
     prevent_destroy = true
@@ -51,7 +55,7 @@ resource "confluent_kafka_cluster" "standard" {
   standard {}
 
   environment {
-    id = confluent_environment.staging.id
+    id = confluent_environment.env.id
   }
 
   /*lifecycle {
