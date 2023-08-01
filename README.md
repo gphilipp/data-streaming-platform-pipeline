@@ -55,7 +55,11 @@ Save the API key and secret. The secret is not retrievable later.
 
 Great, we have an API key that we can now use to run Terraform from within the CI/CD pipeline.
 
-Now, create a subdirectory called `staging` and create in this directory a `main.tf` file with the following content:
+Now, create a subdirectory called `staging`
+```shell
+mkdir staging && cd staging
+```
+In this directory, create a `main.tf` file with the following content:
 
 ```terraform
 # Configure the Confluent Provider
@@ -163,11 +167,11 @@ If we wanted to, we could install Terraform locally and run the Terraform code f
 
 First, create a `.github/workflows` directory in your repository.
     ```shell
-    mkdir -p .github/workflows && cd .github/workflows 
+    cd .. && mkdir -p .github/workflows && cd .github/workflows 
     ```
-In the `.github/workflows` directory, we're going to create 3 files: `ci.yml`, `cd.yml` and `promote.yaml`
+In this `.github/workflows` directory, we're going to create 3 GitHub Actions workflow files: `ci.yml`, `cd.yml` and `promote.yaml`
 
-The `ci.yml` will be run when you open or update a pull request. It runs a lint job and prints the terraform plan in a PR comment:
+The `ci.yml` contains the CI workflow which will be run when you open or update a pull request. It runs a lint job and prints the terraform plan in a PR comment:
 
 ```yaml
 name: CI
@@ -285,7 +289,8 @@ jobs:
         run: exit 1
 ```
 
-Next, copy the following GitHub Action workflow in a `cd.yml` file 
+Next, copy the following GitHub Action workflow in a `cd.yml` file.
+This file contains the CD workflow which will run when you merge a pull request. It applies the terraform plan to all environments.  
 ```yaml
 name: CD
 
@@ -394,7 +399,8 @@ jobs:
         working-directory: ${{ matrix.environment }}
 ```
 
-Finally, here's the `promote.yml` file:
+Finally, here's the `promote.yml` file below. This workflow copies the content of the `staging` folder to the `prod` folder and runs whenever code is pushed to the `main` branch. We assume that you'll only make pull requests with changes in the `staging` folder or in the `prod/specific` folder.
+
 ```yaml
 name: Promote staging to prod
 run-name: ${{ github.actor }} wants to promote Staging to Prod 🚀
@@ -439,11 +445,12 @@ jobs:
 
 We also need to create a `specific` subdirectory in each environment folder if we need environment specific code which will escape the copying from `staging` to `prod` done by the `promote` action.
 ```
-mkdir -p staging/specific && touch staging/specific/.gitkeep
+cd ../..
+mkdir -p staging/specific && touch staging/specific/.gitkeep 
 mkdir -p prod/specific && touch prod/specific/.gitkeep
 ```
 
-The last file is an AWS policy to grant read/write access to the S3 bucket which will store the Terraform State. We'll use it later when we do the initial setup.
+The last file we need is an AWS policy to grant read/write access to the S3 bucket which will store the Terraform State. We'll use it later when we do the initial setup.
 
 Create the following  `s3_bucket_full_access_policy.json` at the top of your repository directory:
 ```json
@@ -464,14 +471,44 @@ Create the following  `s3_bucket_full_access_policy.json` at the top of your rep
 
 Now, commit and push your changes (change `your_user` with your own username)
 ```shell
-git add .github staging prod *.json *&& \
-git commit -m "Initial version" && \
+git init
+git add .github staging prod *.json
+```
+
+If you run `git status` this is what you should get:
+```shell
+On branch main
+
+No commits yet
+
+Changes to be committed:
+  (use "git rm --cached <file>..." to unstage)
+	new file:   .github/workflows/cd.yml
+	new file:   .github/workflows/ci.yml
+	new file:   .github/workflows/promote.yml
+	new file:   prod/specific/.gitkeep
+	new file:   s3_bucket_full_access_policy.json
+	new file:   staging/main.tf
+	new file:   staging/specific/.gitkeep
+```
+
+Before committing and pushing those changes, we must allow GitHub Actions to create pull requests. Under the "Actions -> General -> Workflow Permissions" settings of your freshly created GitHub repository:
+1. enable the "Allow GitHub Actions to create and approve pull requests" option 
+2. allow `GITHUB_TOKEN` to read and write to your repository.
+3. click the `Save` button.
+
+![img.png](github-actions-settings.png)
+
+With these two options enabled, our `promote` workflow will be able to create pull requests.
+
+Now, let's commit and push this code to GitHub.
+```shell
+git commit -m "Initial version"
 git remote add origin git@github.com:your_user/data-streaming-platform-pipeline.git
 git branch -M main
 git push -u origin main
 ```
 
-Under the "Actions -> General -> Workflow Permissions" settings of your freshly created GitHub repository, check the "Allow GitHub Actions to create and approve pull requests" option and allow  `GITHUB_TOKEN` to read and write to your repository. With these two options enabled, our `promote` workflow will be able to create pull requests.
 
 Run the following aws CLI commands to create the S3 bucket to store the state:
 ```shell
