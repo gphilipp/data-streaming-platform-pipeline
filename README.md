@@ -544,8 +544,10 @@ As soon as you'll merge that promotion Pull Request, the CD workflow will trigge
 ![img.png](images/cd-workflow-outcome.png)
 
 
-Now, if you head over to Confluent Cloud, you can see that both environments have been created and have the same exact configuration. Congrats!
+Now, if you head over to Confluent Cloud, you can see that both environments have been created and have the same exact configuration. 
+Congrats!
 ![Confluent CLoud Environments](images/confluent-cloud-envs.png)
+
 
 ## Improvement Ideas
 
@@ -568,13 +570,15 @@ Now, if you head over to Confluent Cloud, you can see that both environments hav
 7. Maybe take advantage of the GitHub environments secrets. Not sure what it would improve though as we don't have env specific secrets, unless we update the GitHub actions to use env-specific credentials, but that would entail additional manual bootstrapping.
 
 ## Principles
+
+I've gathered the following principles when reading the Resources in the next section. 
 - Infrastructure-related objects that cross service ownership borders like AWS VPCs are usually owned by the SRE team where they are grouped under workspaces with descriptive names (aws-infra) [(source)](https://medium.com/forto-tech-blog/gitops-nirvana-controlled-and-safe-promotions-of-changes-across-environments-with-terraform-6ec31d39b034)
 - Every change is peer-reviewed.
 - The files in the main branch always reflect the state of the cloud API.
 - The user interacts with files and Git(and GitHub). No tooling, no tokens, no extra UI.
 - Don't have a monorepo which spans all teams (*In the future, we plan to move the service-owned workspaces to their respective code repo*)
 - Use separate directorys to have control over the timing of promotion to each environment (e.g. Production)
-- Don't use branches for managing different environments to
+- Don't use branches for managing different environments
 - Don't use environment conditionals in your TF code (*while it’s tempting to just use those mechanisms for referencing multiple environments in a single code directory, control over the timing of a change in each environment was not something we wanted to forsake*)
 - Use a CI/CD pipeline, don't apply from your machine (*It forces peer review, ensures tool version parity, and significantly reduces toil on every change and initial workstation setup.*)
 - On every PR open and update, we check Terraform formatting and generate a plan, we display the plan output as a comment in the PR and save the plan file to s3 to use when the PR is merged.
