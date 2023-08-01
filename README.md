@@ -496,7 +496,7 @@ Before committing and pushing those changes, we must allow GitHub Actions to cre
 2. allow `GITHUB_TOKEN` to read and write to your repository.
 3. click the `Save` button.
 
-![img.png](github-actions-settings.png)
+![img.png](images/github-actions-settings.png)
 
 With these two options enabled, our `promote` workflow will be able to create pull requests.
 
@@ -527,18 +527,18 @@ git push -u origin main
 ```
 
 Once you push, you should see the promote worfklow being run in the "Actions" tab on GitHub.
-![Promote workflow](promote-workflow.png)
+![Promote workflow](images/promote-workflow.png)
 
 In the "Pull Requests" tab, you can see that a PR has been created because we pushed directly to the `main` branch. Of course, you can prevent people from pushing directly to the `main` branch if you feel this is a bit risky. If you open this PR, you can see that the only change is the addition of the `main.tf` file under the `prod` folder.
 
-![Promote PR](promote-pr.png)
+![Promote PR](images/promote-pr.png)
 
 When you merge that promotion PR, the CD workflow will trigger a job to terraform all the environments:
 
-![CD workflow outcome](cd-workflow-outcome.png)
+![CD workflow outcome](images/cd-workflow-outcome.png)
 
 If you head over to Confluent Cloud, you can see that both environments have been created.
-![Confluent CLoud Environments](confluent-cloud-envs.png)
+![Confluent CLoud Environments](images/confluent-cloud-envs.png)
 
 ## Improvement Ideas
 
