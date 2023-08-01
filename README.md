@@ -532,14 +532,16 @@ In the "Pull Requests" tab, you can see that a PR has been created because we pu
 
 ![Promote PR](promote-pr.png)
 
-Merge the PR now, the CD job will trigger to terraform all the environments:
-![CD workflow](cd-workflow.png)
+When you merge that promotion PR, the CD workflow will trigger a job to terraform all the environments:
+
+![CD workflow outcome](cd-workflow-outcome.png)
 
 ## Improvement Ideas
 
 1. Remove duplication between `ci.yml` and `cd.yml`
 2. `set-output` has been deprecated and so we need to update the steps which runs the plan and then prints it in a PR comment. 
 3. Create an additional Disaster Recovery environment (in a `dr` folder) with Cluster Linking configured in `prod/specific`
+4. Put the `platform-manager-kafka-api-key` in use.
 4. Detect changes in folders to skip the unchanged environment deployment tasks early.
     ``` yaml
      - name: Get changed folder  
