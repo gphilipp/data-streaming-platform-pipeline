@@ -519,10 +519,10 @@ Add the following entries in your GitHub repo settings, under "Secrets and Varia
 
 Now, let's commit and push this code to GitHub.
 ```shell
-git commit -m "Initial version"
+git checkout -b automation
+git commit -m "Automate the platform creation"
 git remote add origin git@github.com:your_user/data-streaming-platform-pipeline.git
-git branch -M main
-git push -u origin main
+git push -u origin automation
 ```
 
 Once you push, you should see the promote workflow being run in the "Actions" tab on GitHub.
