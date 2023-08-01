@@ -529,8 +529,9 @@ Add the following entries in your GitHub repo settings, under "Secrets and Varia
 ## Improvement Ideas
 
 1. Remove duplication between `ci.yml` and `cd.yml`
-2. Create an additional Disaster Recovery environment (in a `dr` folder) with Cluster Linking configured in `prod/specific`
-3. Detect changes in folders to skip the unchanged environment deployment tasks early.
+2. `set-output` has been deprecated and so we need to update the steps which runs the plan and then prints it in a PR comment. 
+3. Create an additional Disaster Recovery environment (in a `dr` folder) with Cluster Linking configured in `prod/specific`
+4. Detect changes in folders to skip the unchanged environment deployment tasks early.
     ``` yaml
      - name: Get changed folder  
         id: getchange  
@@ -541,8 +542,8 @@ Add the following entries in your GitHub repo settings, under "Secrets and Varia
      run: cd ${{ steps.getchange.outputs.folder }}
      
     ```
-4. Create topics and/or deploy Stream Governance
-5. Maybe take advantage of the GitHub environments secrets. Not sure what it would improve though as we don't have env specific secrets, unless we update the GitHub actions to use env-specific credentials, but that would entail additional manual bootstrapping.
+5. Create topics and/or deploy Stream Governance
+6. Maybe take advantage of the GitHub environments secrets. Not sure what it would improve though as we don't have env specific secrets, unless we update the GitHub actions to use env-specific credentials, but that would entail additional manual bootstrapping.
 
 ## Principles
 - Infrastructure-related objects that cross service ownership borders like AWS VPCs are usually owned by the SRE team where they are grouped under workspaces with descriptive names (aws-infra) [(source)](https://medium.com/forto-tech-blog/gitops-nirvana-controlled-and-safe-promotions-of-changes-across-environments-with-terraform-6ec31d39b034)
