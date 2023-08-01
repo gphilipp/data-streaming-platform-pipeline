@@ -15,9 +15,7 @@ We need a Confluent Cloud API key which will be used by Terraform to create and 
 
 We're going to create this API key via the Confluent Cloud CLI, you can install it with `brew install confluentinc/tap/cli` or follow the instructions here.
 
-If you prefer, you can also use the Confluent Cloud UI and head over to "Cloud API Keys"  in the Administration section.
-
-![[Pasted image 20230731174754.png]]
+If you prefer, you can also use the Confluent Cloud UI and head over to "Cloud API Keys" in the Administration section. Just make sure to select "Granular access" to create the service account.
 
 Let's create the service account with the CLI:
 ```shell
