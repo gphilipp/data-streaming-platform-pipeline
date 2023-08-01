@@ -519,6 +519,7 @@ Add the following entries in your GitHub repo settings, under "Secrets and Varia
 
 Now, let's commit and push this code to GitHub.
 ```shell
+git checkout -branch automation
 git commit -m "Initial version"
 git remote add origin git@github.com:your_user/data-streaming-platform-pipeline.git
 git branch -M main
@@ -536,13 +537,16 @@ When you merge that promotion PR, the CD workflow will trigger a job to terrafor
 
 ![CD workflow outcome](cd-workflow-outcome.png)
 
+If you head over to Confluent Cloud, you can see that both environments have been created.
+![Confluent CLoud Environments](confluent-cloud-envs.png)
+
 ## Improvement Ideas
 
 1. Remove duplication between `ci.yml` and `cd.yml`
 2. `set-output` has been deprecated and so we need to update the steps which runs the plan and then prints it in a PR comment. 
 3. Create an additional Disaster Recovery environment (in a `dr` folder) with Cluster Linking configured in `prod/specific`
 4. Put the `platform-manager-kafka-api-key` in use.
-4. Detect changes in folders to skip the unchanged environment deployment tasks early.
+5. Detect changes in folders to skip the unchanged environment deployment tasks early.
     ``` yaml
      - name: Get changed folder  
         id: getchange  
@@ -553,8 +557,8 @@ When you merge that promotion PR, the CD workflow will trigger a job to terrafor
      run: cd ${{ steps.getchange.outputs.folder }}
      
     ```
-5. Create topics and/or deploy Stream Governance
-6. Maybe take advantage of the GitHub environments secrets. Not sure what it would improve though as we don't have env specific secrets, unless we update the GitHub actions to use env-specific credentials, but that would entail additional manual bootstrapping.
+6. Create topics and/or deploy Stream Governance
+7. Maybe take advantage of the GitHub environments secrets. Not sure what it would improve though as we don't have env specific secrets, unless we update the GitHub actions to use env-specific credentials, but that would entail additional manual bootstrapping.
 
 ## Principles
 - Infrastructure-related objects that cross service ownership borders like AWS VPCs are usually owned by the SRE team where they are grouped under workspaces with descriptive names (aws-infra) [(source)](https://medium.com/forto-tech-blog/gitops-nirvana-controlled-and-safe-promotions-of-changes-across-environments-with-terraform-6ec31d39b034)
