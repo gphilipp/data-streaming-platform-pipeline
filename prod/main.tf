@@ -8,6 +8,7 @@ terraform {
   }
 }
 
+# Configure the terraform backend to store the terraform state
 terraform {
   backend "s3" {
     bucket = "platform-engineering-terraform-state"
@@ -38,12 +39,8 @@ provider "confluent" {
   cloud_api_secret    = var.confluent_cloud_api_secret
 }
 
-
 resource "confluent_environment" "env" {
   display_name = var.confluent_cloud_environment_name
-  /*lifecycle {
-    prevent_destroy = true
-  }*/
 }
 
 resource "confluent_kafka_cluster" "standard" {
@@ -56,24 +53,20 @@ resource "confluent_kafka_cluster" "standard" {
   environment {
     id = confluent_environment.env.id
   }
-
-  /*lifecycle {
-    prevent_destroy = true
-  }*/
 }
 
-
+# We use a dedicated service account, called 'platform-manager', per environment
 resource "confluent_service_account" "platform-manager" {
   display_name = "platform-manager-${confluent_environment.env.display_name}"
   description  = "Service account to manage the platform"
 }
 
+# The 'platform-manager' account is a cloud cluster admin.
 resource "confluent_role_binding" "platform-manager-kafka-cluster-admin" {
   principal   = "User:${confluent_service_account.platform-manager.id}"
   role_name   = "CloudClusterAdmin"
   crn_pattern = confluent_kafka_cluster.standard.rbac_crn
 }
-
 
 resource "confluent_api_key" "platform-manager-kafka-api-key" {
   display_name = "platform-manager-kafka-api-key"
@@ -93,13 +86,12 @@ resource "confluent_api_key" "platform-manager-kafka-api-key" {
       id = confluent_environment.env.id
     }
   }
+
   # The goal is to ensure that confluent_role_binding.app-manager-kafka-cluster-admin is created before
   # confluent_api_key.app-manager-kafka-api-key is used to create instances of
   # confluent_kafka_topic, confluent_kafka_acl resources.
-
-  # 'depends_on' meta-argument is specified in confluent_api_key.app-manager-kafka-api-key to avoid having
-  # multiple copies of this definition in the configuration which would happen if we specify it in
-  # confluent_kafka_topic, confluent_kafka_acl resources instead.
+  # 'depends_on' meta-argument is specified to avoid having multiple copies of this definition in the configuration
+  # which would happen if we specify it in confluent_kafka_topic, confluent_kafka_acl resources instead.
   depends_on = [
     confluent_role_binding.platform-manager-kafka-cluster-admin
   ]
