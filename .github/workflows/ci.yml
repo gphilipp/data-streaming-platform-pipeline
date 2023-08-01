@@ -77,12 +77,10 @@ jobs:
 
       - name: Terraform plan
         id: plan
-        if: github.event_name == 'pull_request'
         run: terraform plan -no-color -input=false -var="confluent_cloud_api_key=$TF_VAR_CONFLUENT_CLOUD_API_KEY" -var="confluent_cloud_api_secret=$TF_VAR_CONFLUENT_CLOUD_API_SECRET"
         continue-on-error: true
 
       - uses: actions/github-script@v6
-        if: github.event_name == 'pull_request'
         env:
           PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
         with:
