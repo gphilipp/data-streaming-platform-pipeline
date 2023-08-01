@@ -164,9 +164,9 @@ resource "confluent_api_key" "platform-manager-kafka-api-key" {
 If we wanted to, we could install Terraform locally and run the Terraform code from there, but that's exactly what we want to avoid when doing GitOps. Instead, we want a visible, repeatable, audited mechanism to deploy our data streaming platform. It's time for automation!
 
 1. Create a `.github/workflows` directory in your repository.
-```shell
-mkdir -p .github/workflows
-```
+    ```shell
+    mkdir -p .github/workflows
+    ```
 2. In the `.github/workflows` directory, we're going to create 3 files: ci.yml, cd.yml and promote.yaml
 
 Here's all the files you need to create:
@@ -176,223 +176,225 @@ Here's all the files you need to create:
 name: CI
 
 on:
-pull_request:
-types:
-  - opened
-  - synchronize
-paths-ignore:
-  - '**/README.md'
+  pull_request:
+    types:
+      - opened
+      - synchronize
+    paths-ignore:
+      - '**/README.md'
 
 env:
-# We're using AWS S3 as the Terraform backend
-AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-TF_BUCKET_STATE: ${{ secrets.TF_BUCKET_STATE}}
-
-# Credentials for Confluent Cloud
-TF_VAR_CONFLUENT_CLOUD_API_KEY: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_KEY }}
-TF_VAR_CONFLUENT_CLOUD_API_SECRET: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_SECRET }}
-
-# Tell Terraform it's running in CI/CD
-TF_IN_AUTOMATION: true
+  # verbosity setting for Terraform logs
+  TF_LOG: INFO
+  # Credentials for deployment to AWS
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  # S3 bucket for the Terraform state
+  TF_BUCKET_STATE: ${{ secrets.TF_BUCKET_STATE}}
+  # Credentials for Confluent Cloud
+  TF_VAR_CONFLUENT_CLOUD_API_KEY: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_KEY }}
+  TF_VAR_CONFLUENT_CLOUD_API_SECRET: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_SECRET }}
 
 jobs:
-lint:
-runs-on: ubuntu-latest
-steps:
-  - uses: actions/checkout@v3
-	name: Checkout source code
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        name: Checkout source code
 
-  - uses: actions/cache@v3
-	name: Cache plugin dir
-	with:
-	  path: ~/.tflint.d/plugins
-	  key: tflint-${{ hashFiles('.tflint.hcl') }}
+      - uses: actions/cache@v3
+        name: Cache plugin dir
+        with:
+          path: ~/.tflint.d/plugins
+          key: tflint-${{ hashFiles('.tflint.hcl') }}
 
-  - uses: terraform-linters/setup-tflint@v3
-	name: Setup TFLint
-	with:
-	  tflint_version: v0.44.1
+      - uses: terraform-linters/setup-tflint@v3
+        name: Setup TFLint
+        with:
+          tflint_version: v0.44.1
 
-  - name: Show version
-	run: tflint --version
+      - name: Show version
+        run: tflint --version
 
-  - name: Init TFLint
-	run: tflint --init
-	env:
-	  GITHUB_TOKEN: ${{ github.token }}
+      - name: Init TFLint
+        run: tflint --init
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
-  - name: Run TFLint
-	run: tflint -f compact
+      - name: Run TFLint
+        run: tflint -f compact
 
-terraform_plan:
-needs: [lint]
-name: "Terraform Plan"
-runs-on: ubuntu-latest
-defaults:
-  run:
-	shell: bash
-	working-directory: ./staging
-steps:
-  - name: Checkout the repository to the runner
-	uses: actions/checkout@v3
+  terraform_plan:
+    needs: [lint]
+    name: "Terraform Plan"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./staging
+    steps:
+      - name: Checkout the repository to the runner
+        uses: actions/checkout@v3
 
-  - name: Setup Terraform with specified version on the runner
-	uses: hashicorp/setup-terraform@v2
-	with:
-	  terraform_version: 1.3.0
+      - name: Setup Terraform with specified version on the runner
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.3.0
 
-  - name: Terraform init
-	id: init
-	run: terraform init -backend-config="bucket=$TF_BUCKET_STATE"
+      - name: Terraform init
+        id: init
+        run: terraform init -backend-config="bucket=$TF_BUCKET_STATE"
 
-  - name: Terraform validate
-	id: validate
-	run: terraform validate
+      - name: Terraform validate
+        id: validate
+        run: terraform validate
 
-  - name: Terraform plan
-	id: plan
-	run: terraform plan -no-color -input=false -var="confluent_cloud_api_key=$TF_VAR_CONFLUENT_CLOUD_API_KEY" -var="confluent_cloud_api_secret=$TF_VAR_CONFLUENT_CLOUD_API_SECRET"
-	continue-on-error: true
+      - name: Terraform plan
+        id: plan
+        if: github.event_name == 'pull_request'
+        run: terraform plan -no-color -input=false -var="confluent_cloud_api_key=$TF_VAR_CONFLUENT_CLOUD_API_KEY" -var="confluent_cloud_api_secret=$TF_VAR_CONFLUENT_CLOUD_API_SECRET"
+        continue-on-error: true
 
-  - uses: actions/github-script@v6
-	env:
-	  PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-	with:
-	  script: |
-		const output = `#### Terraform Format and Style 🖌
-		#### Environment ${{ matrix.environment }} (CI)
-		#### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-		#### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
-		#### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-		
-		<details><summary>Show Plan</summary>
-		
-		\`\`\`\n
-		${process.env.PLAN}
-		\`\`\`
-		
-		</details>
-		*Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-		
-		github.rest.issues.createComment({
-		  issue_number: context.issue.number,
-		  owner: context.repo.owner,
-		  repo: context.repo.repo,
-		  body: output
-		})
+      - uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          script: |
+            const output = `#### Terraform Format and Style 🖌
+            #### Environment ${{ matrix.environment }} (CI)
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
 
-  - name: Terraform Plan Status
-	if: steps.plan.outcome == 'failure'
-	run: exit 1
+            <details><summary>Show Plan</summary>
+
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
 ```
 `cd.yml`
 ```yaml
 name: CD
 
 on:
-pull_request:
-types:
-  - closed
-paths-ignore:
-  - '**/README.md'
+  pull_request:
+    types:
+      - closed
+    paths-ignore:
+      - '**/README.md'
 
 env:
-# We're using AWS S3 as the Terraform backend
-AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-TF_BUCKET_STATE: ${{ secrets.TF_BUCKET_STATE}}
-
-# Credentials for Confluent Cloud
-TF_VAR_CONFLUENT_CLOUD_API_KEY: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_KEY }}
-TF_VAR_CONFLUENT_CLOUD_API_SECRET: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_SECRET }}
-
-# Tell Terraform it's running in CI/CD
-TF_IN_AUTOMATION: true
+  # verbosity setting for Terraform logs
+  TF_LOG: INFO
+  # Credentials for deployment to AWS
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  # S3 bucket for the Terraform state
+  TF_BUCKET_STATE: ${{ secrets.TF_BUCKET_STATE}}
+  # Credentials for Confluent Cloud
+  TF_VAR_CONFLUENT_CLOUD_API_KEY: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_KEY }}
+  TF_VAR_CONFLUENT_CLOUD_API_SECRET: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_SECRET }}
+  TF_IN_AUTOMATION: true
 
 jobs:
-deploy_streaming_platform:
-name: "Deploy ${{ matrix.environment }} platform"
-if: github.event.pull_request.merged
-strategy:
-  max-parallel: 1
-  matrix:
-	environment: [ staging, prod ]
-runs-on: ubuntu-latest
-steps:
-  - name: Checkout the repository to the runner
-	uses: actions/checkout@v3
+  deploy_streaming_platform:
+    name: "Deploy ${{ matrix.environment }} platform"
+    if: github.event.pull_request.merged
+    strategy:
+      max-parallel: 1
+      matrix:
+        environment: [ staging, prod ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository to the runner
+        uses: actions/checkout@v3
 
-  - name: Check terraform files existence
-	id: check_files
-	uses: andstor/file-existence-action@v2
-	with:
-	  files: "${{ matrix.environment }}/*.tf"
-	  fail: true
+      - name: Check terraform files existence
+        id: check_files
+        uses: andstor/file-existence-action@v2
+        with:
+          files: "${{ matrix.environment }}/*.tf"
+          fail: true
 
-  - name: Setup Terraform with specified version on the runner
-	uses: hashicorp/setup-terraform@v2
-	with:
-	  terraform_version: 1.5.4
+      - name: Setup Terraform with specified version on the runner
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.4
 
-  - name: Terraform init
-	id: init
-	run: terraform init -input=false -backend-config="bucket=$TF_BUCKET_STATE"
-	working-directory: ${{ matrix.environment }}
+      - name: Terraform init
+        id: init
+        run: terraform init -input=false -backend-config="bucket=$TF_BUCKET_STATE"
+        working-directory: ${{ matrix.environment }}
 
-  - name: Terraform validate
-	id: validate
-	run: terraform validate
-	working-directory: ${{ matrix.environment }}
+      - name: Terraform validate
+        id: validate
+        run: terraform validate
+        working-directory: ${{ matrix.environment }}
 
-  - name: Terraform workspace
-	id: workspace
-	run: terraform workspace select -or-create ${{ matrix.environment }}
-	working-directory: ${{ matrix.environment }}
+      - name: Terraform workspace
+        id: workspace
+        run: terraform workspace select -or-create ${{ matrix.environment }}
+        working-directory: ${{ matrix.environment }}
 
-  - name: Terraform plan
-	id: plan
-	run: terraform plan -no-color -input=false 
-	  -var="confluent_cloud_api_key=$TF_VAR_CONFLUENT_CLOUD_API_KEY" 
-	  -var="confluent_cloud_api_secret=$TF_VAR_CONFLUENT_CLOUD_API_SECRET" 
-	  -var="confluent_cloud_environment_name=${{ matrix.environment }}"
-	continue-on-error: true
-	working-directory: ${{ matrix.environment }}
+      - name: Terraform plan
+        id: plan
+        run: terraform plan -no-color -input=false
+          -var="confluent_cloud_api_key=$TF_VAR_CONFLUENT_CLOUD_API_KEY"
+          -var="confluent_cloud_api_secret=$TF_VAR_CONFLUENT_CLOUD_API_SECRET"
+          -var="confluent_cloud_environment_name=${{ matrix.environment }}"
+        continue-on-error: true
+        working-directory: ${{ matrix.environment }}
 
-  - uses: actions/github-script@v6
-	env:
-	  PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-	with:
-	  script: |
-		const output = `#### Terraform Format and Style 🖌
-		#### Environment ${{ matrix.environment }} (CD)
-		#### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-		#### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
-		#### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-		
-		<details><summary>Show Plan</summary>
-		
-		\`\`\`\n
-		${process.env.PLAN}
-		\`\`\`
-		
-		</details>
-		*Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-		
-		github.rest.issues.createComment({
-		  issue_number: context.issue.number,
-		  owner: context.repo.owner,
-		  repo: context.repo.repo,
-		  body: output
-		})
+      - uses: actions/github-script@v6
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          script: |
+            const output = `#### Terraform Format and Style 🖌
+            #### Environment ${{ matrix.environment }} (CD)
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
 
-  - name: Terraform Apply
-	if: github.ref == 'main' && github.event.pull_request.merged
-	run: terraform apply -auto-approve -input=false 
-	  -var="confluent_cloud_api_key=$TF_VAR_CONFLUENT_CLOUD_API_KEY"
-	  -var="confluent_cloud_api_secret=$TF_VAR_CONFLUENT_CLOUD_API_SECRET" 
-	  -var="confluent_cloud_environment_name=${{ matrix.environment }}"
-	working-directory: ${{ matrix.environment }}
+            <details><summary>Show Plan</summary>
+
+            \`\`\`\n
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Terraform Apply
+        if: github.ref == 'main' && github.event.pull_request.merged
+        run: terraform apply -auto-approve -input=false
+          -var="confluent_cloud_api_key=$TF_VAR_CONFLUENT_CLOUD_API_KEY"
+          -var="confluent_cloud_api_secret=$TF_VAR_CONFLUENT_CLOUD_API_SECRET"
+          -var="confluent_cloud_environment_name=${{ matrix.environment }}"
+        working-directory: ${{ matrix.environment }}
+
 
 ```
 
@@ -401,42 +403,42 @@ And finally the `promote.yml` file:
 name: Promote staging to prod
 run-name: ${{ github.actor }} wants to promote Staging to Prod 🚀
 on:
-push:
-branches:
-  - main
-paths-ignore:
-  - '**/README.md'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**/README.md'
 
 jobs:
-promote:
-runs-on: ubuntu-latest
-steps:
-  - name: Checkout code
-	uses: actions/checkout@v3
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-  - run: echo "🔎 Compare and sync directories"
-  - name: Compare and sync directories
-	run: |
-	  # Exclude the 'specific' directory and compare staging and prod
-	  DIFF=$(rsync --stats --recursive --dry-run --exclude=specific ./staging/ ./prod/ | awk '/files transferred/{print $NF}')
-	  
-	  # If DIFF is not 0, means there are differences
-	  if [ "$DIFF" -ne 0 ]; then
-		# If there are differences, use rsync to copy files excluding the 'specific' directory
-		rsync --checksum --recursive --exclude=specific ./staging/ ./prod/
-	  fi
+      - run: echo "🔎 Compare and sync directories"
+      - name: Compare and sync directories
+        run: |
+          # Exclude the 'specific' directory and compare staging and prod
+          DIFF=$(rsync --stats --recursive --dry-run --exclude=specific ./staging/ ./prod/ | awk '/files transferred/{print $NF}')
 
-  - name: Set current date as env variable
-	run: echo "NOW=$(date +'%Y-%m-%d-%H%M%S')" >> $GITHUB_ENV
+          # If DIFF is not 0, means there are differences
+          if [ "$DIFF" -ne 0 ]; then
+            # If there are differences, use rsync to copy files excluding the 'specific' directory
+            rsync --checksum --recursive --exclude=specific ./staging/ ./prod/
+          fi
 
-  - name: Create Pull Request
-	uses: peter-evans/create-pull-request@v3
-	with:
-	  token: ${{ secrets.GITHUB_TOKEN }}
-	  commit-message: Sync staging to prod
-	  title: "Sync staging to prod ${{env.NOW}}"
-	  body: This PR is to sync the staging directory to the prod directory.
-	  branch: "sync-staging-to-prod-${{env.NOW}}"
+      - name: Set current date as env variable
+        run: echo "NOW=$(date +'%Y-%m-%d-%H%M%S')" >> $GITHUB_ENV
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Sync staging to prod
+          title: "Sync staging to prod ${{env.NOW}}"
+          body: This PR is to sync the staging directory to the prod directory.
+          branch: "sync-staging-to-prod-${{env.NOW}}"
 ```
 
 We also need to create a `specific` subdirectory in each environment folder if we need environment specific code which will escape the copying from `staging` to `prod` done by the `promote` action.
@@ -464,7 +466,7 @@ Create the following  `s3_bucket_full_access_policy.json` at the top of your rep
 }
 ```
 
-Now, commit and push your changes (change `your_user` with your own user name)
+Now, commit and push your changes (change `your_user` with your own username)
 ```shell
 git add .github staging prod *.json *&& \
 git commit -m "Initial version" && \
@@ -499,31 +501,31 @@ Add the following *repository* secrets in your GitHub repo settings, under "Secr
 1. Remove duplication between `ci.yml` and `cd.yml`
 2. Create an additional Disaster Recovery environment (in a `dr` folder) with Cluster Linking configured in `prod/specific`
 3. Detect changes in folders to skip the unchanged environment deployment tasks early.
-``` yaml
- - name: Get changed folder  
-	id: getchange  
-	run: |  
-	  echo "::set-output name=folder::$(git diff --dirstat=files,0 HEAD~1..HEAD |     awk '{print $2}')"  
-  
-- name: CD into changed folder  
- run: cd ${{ steps.getchange.outputs.folder }}
- 
-```
-5. Create topics and/or deploy Stream Governance
-6. Maybe take advantage of the GitHub environments secrets. Not sure what it would improve though as we don't have env specific secrets, unless we update the GitHub actions to use env-specific creds, but that would entail additional manual bootstrapping.
+    ``` yaml
+     - name: Get changed folder  
+        id: getchange  
+        run: |  
+          echo "::set-output name=folder::$(git diff --dirstat=files,0 HEAD~1..HEAD |     awk '{print $2}')"  
+      
+    - name: CD into changed folder  
+     run: cd ${{ steps.getchange.outputs.folder }}
+     
+    ```
+4. Create topics and/or deploy Stream Governance
+5. Maybe take advantage of the GitHub environments secrets. Not sure what it would improve though as we don't have env specific secrets, unless we update the GitHub actions to use env-specific credentials, but that would entail additional manual bootstrapping.
 
 ## Principles
 - Infrastructure-related objects that cross service ownership borders like AWS VPCs are usually owned by the SRE team where they are grouped under workspaces with descriptive names (aws-infra) [(source)](https://medium.com/forto-tech-blog/gitops-nirvana-controlled-and-safe-promotions-of-changes-across-environments-with-terraform-6ec31d39b034)
 - Every change is peer-reviewed.
 - The files in the main branch always reflect the state of the cloud API.
-- The user interacts with files and Git(and Github). No tooling, no tokens, no extra UI.
+- The user interacts with files and Git(and GitHub). No tooling, no tokens, no extra UI.
 - Don't have a monorepo which spans all teams (*In the future, we plan to move the service-owned workspaces to their respective code repo*)
-- Use separate folders to have control over the timing of promotion to each environment (eg Production)
+- Use separate folders to have control over the timing of promotion to each environment (e.g. Production)
 - Don't use branches for managing different environments to
 - Don't use environment conditionals in your TF code (*while it’s tempting to just use those mechanisms for referencing multiple environments in a single code directory, control over the timing of a change in each environment was not something we wanted to forsake*)
 - Use a CI/CD pipeline, don't apply from your machine (*It forces peer review, ensures tool version parity, and significantly reduces toil on every change and initial workstation setup.*)
 - On every PR open and update, we check Terraform formatting and generate a plan, we display the plan output as a comment in the PR and save the plan file to s3 to use when the PR is merged.
-- Use small workspaces to reduce the chance of having stale, unapplied plans
+- Use small workspaces to reduce the chance of having stale, non-applied plans
 - Merging to the main branch is the approval
 - Engineers interact directly only with the staging folder.
 
@@ -535,8 +537,7 @@ Add the following *repository* secrets in your GitHub repo settings, under "Secr
 - https://docs.gitlab.com/ee/user/infrastructure/iac/terraform_state.html
 - https://www.cloudthat.com/resources/blog/automate-terraform-modules-with-github-actions-as-infrastructure/
 - https://www.pluralsight.com/resources/blog/cloud/how-to-use-github-actions-to-automate-terraform
-- [Running Kubernetes on Github Actions](https://dev.to/kitarp29/running-kubernetes-on-github-actions-f2c)
-- [Okteto](https://github.com/okteto/okteto)
+- [Running Kubernetes on GitHub Actions](https://dev.to/kitarp29/running-kubernetes-on-github-actions-f2c)
 - https://medium.com/forto-tech-blog/gitops-nirvana-controlled-and-safe-promotions-of-changes-across-environments-with-terraform-6ec31d39b034
 
 
