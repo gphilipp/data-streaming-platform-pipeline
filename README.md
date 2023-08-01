@@ -163,15 +163,14 @@ resource "confluent_api_key" "platform-manager-kafka-api-key" {
 
 If we wanted to, we could install Terraform locally and run the Terraform code from there, but that's exactly what we want to avoid when doing GitOps. Instead, we want a visible, repeatable, audited mechanism to deploy our data streaming platform. It's time for automation!
 
-1. Create a `.github/workflows` directory in your repository.
+First, create a `.github/workflows` directory in your repository.
     ```shell
-    mkdir -p .github/workflows
+    mkdir -p .github/workflows && cd .github/workflows 
     ```
-2. In the `.github/workflows` directory, we're going to create 3 files: ci.yml, cd.yml and promote.yaml
+In the `.github/workflows` directory, we're going to create 3 files: `ci.yml`, `cd.yml` and `promote.yaml`
 
-Here's all the files you need to create:
+The `ci.yml` will be run when you open or update a pull request. It runs a lint job and prints the terraform plan in a PR comment:
 
-`ci.yml`
 ```yaml
 name: CI
 
@@ -287,7 +286,8 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
 ```
-`cd.yml`
+
+Next, copy the following GitHub Action workflow in a `cd.yml` file 
 ```yaml
 name: CD
 
@@ -394,11 +394,9 @@ jobs:
           -var="confluent_cloud_api_secret=$TF_VAR_CONFLUENT_CLOUD_API_SECRET"
           -var="confluent_cloud_environment_name=${{ matrix.environment }}"
         working-directory: ${{ matrix.environment }}
-
-
 ```
 
-And finally the `promote.yml` file:
+Finally, here's the `promote.yml` file:
 ```yaml
 name: Promote staging to prod
 run-name: ${{ github.actor }} wants to promote Staging to Prod 🚀
@@ -449,7 +447,7 @@ mkdir -p prod/specific && touch prod/specific/.gitkeep
 
 The last file is an AWS policy to grant read/write access to the S3 bucket which will store the Terraform State. We'll use it later when we do the initial setup.
 
-Create the following  `s3_bucket_full_access_policy.json` at the top of your repo directory:
+Create the following  `s3_bucket_full_access_policy.json` at the top of your repository directory:
 ```json
 {
   "Version": "2012-10-17",
@@ -477,7 +475,7 @@ git push -u origin main
 
 Under the "Actions -> General -> Workflow Permissions" settings of your freshly created GitHub repository, check the "Allow GitHub Actions to create and approve pull requests" option and allow  `GITHUB_TOKEN` to read and write to your repository. With these two options enabled, our `promote` workflow will be able to create pull requests.
 
-Create the S3 bucket to store the state
+Run the following aws CLI commands to create the S3 bucket to store the state:
 ```shell
 aws s3api create-bucket --bucket "platform-engineering-terraform-state"
 
