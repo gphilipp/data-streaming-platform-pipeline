@@ -8,16 +8,16 @@ on:
       - '**/README.md'
 
 env:
-  # verbosity setting for Terraform logs
-  TF_LOG: INFO
-  # Credentials for deployment to AWS
+  # We're using AWS S3 as the Terraform backend
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  # S3 bucket for the Terraform state
   TF_BUCKET_STATE: ${{ secrets.TF_BUCKET_STATE}}
+
   # Credentials for Confluent Cloud
   TF_VAR_CONFLUENT_CLOUD_API_KEY: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_KEY }}
   TF_VAR_CONFLUENT_CLOUD_API_SECRET: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_SECRET }}
+
+  # Tell Terraform it's running in CI/CD
   TF_IN_AUTOMATION: true
 
 jobs:
@@ -103,6 +103,3 @@ jobs:
           -var="confluent_cloud_api_secret=$TF_VAR_CONFLUENT_CLOUD_API_SECRET" 
           -var="confluent_cloud_environment_name=${{ matrix.environment }}"
         working-directory: ${{ matrix.environment }}
-
-
-
