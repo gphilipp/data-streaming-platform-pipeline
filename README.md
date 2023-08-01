@@ -398,7 +398,7 @@ jobs:
         working-directory: ${{ matrix.environment }}
 ```
 
-Finally, here's the `promote.yml` file below. This workflow copies the content of the `staging` folder to the `prod` folder and runs whenever code is pushed to the `main` branch. We assume that you'll only make pull requests with changes in the `staging` folder or in the `prod/specific` folder.
+Finally, here's the `promote.yml` file below. This workflow copies the content of the `staging` directory to the `prod` directory and runs whenever code is pushed to the `main` branch. We assume that you'll only make pull requests with changes in the `staging` directory or in the `prod/specific` directory.
 
 ```yaml
 name: Promote staging to prod
@@ -442,7 +442,7 @@ jobs:
           branch: "sync-staging-to-prod-${{env.NOW}}"
 ```
 
-We also need to create a `specific` subdirectory in each environment folder if we need environment specific code which will escape the copying from `staging` to `prod` done by the `promote` action.
+We also need to create a `specific` subdirectory in each environment directory if we need environment specific code which will escape the copying from `staging` to `prod` done by the `promote` action.
 ```
 cd ../..
 mkdir -p staging/specific && touch staging/specific/.gitkeep 
@@ -525,35 +525,44 @@ git remote add origin git@github.com:your_user/data-streaming-platform-pipeline.
 git push -u origin automation
 ```
 
-Once you push, you should see the promote workflow being run in the "Actions" tab on GitHub.
+Once you've pushed, open a Pull Request for the automation branch.
+Doing so will trigger the CI workflow.
+
+![CI workflow](images/ci-workflow.png)
+
+The CI workflow lints the Terraform code and gives you a preview of the plan directly in the PR as a comment:   
+![CI workflow terraform plan](images/ci-workflow-terraform-plan.png)
+
+When you merge this Pull Request, the promote workflow will trigger and create another Pull Request which copies the whole content of the `staging` directory to the `prod` directory, except any files sitting in the `specific` subdirectory.
+
 ![Promote workflow](images/promote-workflow.png)
 
-In the "Pull Requests" tab, you can see that a PR has been created because we pushed directly to the `main` branch. Of course, you can prevent people from pushing directly to the `main` branch if you feel this is a bit risky. If you open this PR, you can see that the only change is the addition of the `main.tf` file under the `prod` folder.
+If you open this Pull Request, you can see that the proposed change is the addition of the `main.tf` file under the `prod` directory.
 
 ![Promote PR](images/promote-pr.png)
 
-When you merge that promotion PR, the CD workflow will trigger a job to terraform all the environments:
+When you merge that promotion Pull Request, the CD workflow will trigger a job to Terraform all environments:
+![img.png](images/cd-workflow-outcome.png)
 
-![CD workflow outcome](images/cd-workflow-outcome.png)
 
-If you head over to Confluent Cloud, you can see that both environments have been created.
+If you head over to Confluent Cloud, you can see that both environments have been created and have the same exact configuration. Congrats!
 ![Confluent CLoud Environments](images/confluent-cloud-envs.png)
 
 ## Improvement Ideas
 
 1. Remove duplication between `ci.yml` and `cd.yml`
 2. `set-output` has been deprecated, so we need to update the steps which runs the plan and then prints it in a PR comment. 
-3. Create an additional Disaster Recovery environment (in a `dr` folder) with Cluster Linking configured in `prod/specific`
+3. Create an additional Disaster Recovery environment (in a `dr` directory) with Cluster Linking configured in `prod/specific`
 4. Put the `platform-manager-kafka-api-key` in use.
-5. Detect changes in folders to skip the unchanged environment deployment tasks early.
+5. Detect changes in directorys to skip the unchanged environment deployment tasks early.
     ``` yaml
-     - name: Get changed folder  
+     - name: Get changed directory  
         id: getchange  
         run: |  
-          echo "folder=$(git diff --dirstat=files,0 HEAD~1..HEAD | awk '{print $2}')" >> $GITHUB_OUTPUT  
+          echo "directory=$(git diff --dirstat=files,0 HEAD~1..HEAD | awk '{print $2}')" >> $GITHUB_OUTPUT  
       
-    - name: CD into changed folder  
-     run: cd ${{ steps.getchange.outputs.folder }}
+    - name: CD into changed directory  
+     run: cd ${{ steps.getchange.outputs.directory }}
      
     ```
 6. Create topics and/or deploy Stream Governance
@@ -565,14 +574,14 @@ If you head over to Confluent Cloud, you can see that both environments have bee
 - The files in the main branch always reflect the state of the cloud API.
 - The user interacts with files and Git(and GitHub). No tooling, no tokens, no extra UI.
 - Don't have a monorepo which spans all teams (*In the future, we plan to move the service-owned workspaces to their respective code repo*)
-- Use separate folders to have control over the timing of promotion to each environment (e.g. Production)
+- Use separate directorys to have control over the timing of promotion to each environment (e.g. Production)
 - Don't use branches for managing different environments to
 - Don't use environment conditionals in your TF code (*while it’s tempting to just use those mechanisms for referencing multiple environments in a single code directory, control over the timing of a change in each environment was not something we wanted to forsake*)
 - Use a CI/CD pipeline, don't apply from your machine (*It forces peer review, ensures tool version parity, and significantly reduces toil on every change and initial workstation setup.*)
 - On every PR open and update, we check Terraform formatting and generate a plan, we display the plan output as a comment in the PR and save the plan file to s3 to use when the PR is merged.
 - Use small workspaces to reduce the chance of having stale, non-applied plans
 - Merging to the main branch is the approval
-- Engineers interact directly only with the staging folder.
+- Engineers interact directly only with the staging directory.
 
 ## Resources
 - https://developer.hashicorp.com/terraform/tutorials/automation/github-actions
