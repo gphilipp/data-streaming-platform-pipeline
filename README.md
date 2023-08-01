@@ -537,15 +537,14 @@ When you merge this Pull Request, the promote workflow will trigger and create a
 
 ![Promote workflow](images/promote-workflow.png)
 
-If you open this Pull Request, you can see that the proposed change is the addition of the `main.tf` file under the `prod` directory.
-
+If you open this Pull Request, you can see that the proposed change is the addition of the `main.tf` file under the `prod` directory, as expected.
 ![Promote PR](images/promote-pr.png)
 
-When you merge that promotion Pull Request, the CD workflow will trigger a job to Terraform all environments:
+As soon as you'll merge that promotion Pull Request, the CD workflow will trigger a job to Terraform all environments:
 ![img.png](images/cd-workflow-outcome.png)
 
 
-If you head over to Confluent Cloud, you can see that both environments have been created and have the same exact configuration. Congrats!
+Now, if you head over to Confluent Cloud, you can see that both environments have been created and have the same exact configuration. Congrats!
 ![Confluent CLoud Environments](images/confluent-cloud-envs.png)
 
 ## Improvement Ideas
