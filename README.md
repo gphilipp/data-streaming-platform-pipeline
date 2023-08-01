@@ -43,7 +43,7 @@ Let's create an API key, again, use the service account id you've created:
 confluent api-key --service-account sa-56q6kz create --resource cloud --description "Confluent Cloud API key for terraform_runner service account"
 ```
 
-You should get something along those lines (note that I've deleted that key long before publishing this exercise):
+You should get something along those lines (note that I've deleted that key long before publishing this exercise).
 ```
 It may take a couple of minutes for the API key to be ready.
 Save the API key and secret. The secret is not retrievable later.
@@ -53,7 +53,7 @@ Save the API key and secret. The secret is not retrievable later.
 +------------+------------------------------------------------------------------+
 ```
 
-Great, we have an API key that we can now use to run Terraform from within the CI/CD pipeline.
+Great, we have an API key that we can now use to run Terraform from within the CI/CD pipeline. Keep it in a safe place, we're going to use in the next steps.
 
 Now, create a subdirectory called `staging`
 ```shell
@@ -509,14 +509,11 @@ git branch -M main
 git push -u origin main
 ```
 
-
 Run the following aws CLI commands to create the S3 bucket to store the state:
 ```shell
 aws s3api create-bucket --bucket "platform-engineering-terraform-state"
 
 aws iam create-user --user-name "terraform-user"
-# arn:aws:iam::321751332100:user/terraform-user
-# UserId: terraform-user
 
 aws iam create-policy --policy-name S3FullAccessPolicy --policy-document file://s3_bucket_full_access_policy.json
 # arn:aws:iam::321751332100:policy/S3FullAccessPolicy
@@ -524,10 +521,10 @@ aws iam create-policy --policy-name S3FullAccessPolicy --policy-document file://
 aws iam attach-user-policy --policy-arn arn:aws:iam::321751332100:policy/S3FullAccessPolicy --user-name terraform-user
 ```
 
-Add the following *repository* secrets in your GitHub repo settings, under "Secrets and Variables > Actions":
-- `TF_BUCKET_STATE` set to `platform-engineering-terraform-state`.
-- `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` set your AWS account API key (use a dedicated IAM user, not your root account)
-- `TF_VAR_CONFLUENT_CLOUD_API_KEY` and `TF_VAR_CONFLUENT_CLOUD_API_SECRET` set to the API credentials created earlier for your `terraform-user`.
+Add the following entries in your GitHub repo settings, under "Secrets and Variables > Actions":
+- Add a repository variable called `TF_BUCKET_STATE` set to `platform-engineering-terraform-state`.
+- Add repository secrets `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` set your AWS account API key (use a dedicated IAM user, not your root account)
+- Add repository secrets `TF_VAR_CONFLUENT_CLOUD_API_KEY` and `TF_VAR_CONFLUENT_CLOUD_API_SECRET` set to the API credentials created earlier for your `terraform-user`.
 
 ## Improvement Ideas
 
