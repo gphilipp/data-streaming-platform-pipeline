@@ -519,14 +519,13 @@ Add the following entries in your GitHub repo settings, under "Secrets and Varia
 
 Now, let's commit and push this code to GitHub.
 ```shell
-git checkout -branch automation
 git commit -m "Initial version"
 git remote add origin git@github.com:your_user/data-streaming-platform-pipeline.git
 git branch -M main
 git push -u origin main
 ```
 
-Once you push, you should see the promote worfklow being run in the "Actions" tab on GitHub.
+Once you push, you should see the promote workflow being run in the "Actions" tab on GitHub.
 ![Promote workflow](images/promote-workflow.png)
 
 In the "Pull Requests" tab, you can see that a PR has been created because we pushed directly to the `main` branch. Of course, you can prevent people from pushing directly to the `main` branch if you feel this is a bit risky. If you open this PR, you can see that the only change is the addition of the `main.tf` file under the `prod` folder.
@@ -543,7 +542,7 @@ If you head over to Confluent Cloud, you can see that both environments have bee
 ## Improvement Ideas
 
 1. Remove duplication between `ci.yml` and `cd.yml`
-2. `set-output` has been deprecated and so we need to update the steps which runs the plan and then prints it in a PR comment. 
+2. `set-output` has been deprecated, so we need to update the steps which runs the plan and then prints it in a PR comment. 
 3. Create an additional Disaster Recovery environment (in a `dr` folder) with Cluster Linking configured in `prod/specific`
 4. Put the `platform-manager-kafka-api-key` in use.
 5. Detect changes in folders to skip the unchanged environment deployment tasks early.
