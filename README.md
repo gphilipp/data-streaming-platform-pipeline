@@ -185,16 +185,17 @@ on:
       - '**/README.md'
 
 env:
-  # verbosity setting for Terraform logs
-  TF_LOG: INFO
-  # Credentials for deployment to AWS
+  # We're using AWS S3 as the Terraform backend
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  # S3 bucket for the Terraform state
-  TF_BUCKET_STATE: ${{ secrets.TF_BUCKET_STATE}}
+  TF_BUCKET_STATE: ${{ env.TF_BUCKET_STATE }}
+
   # Credentials for Confluent Cloud
   TF_VAR_CONFLUENT_CLOUD_API_KEY: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_KEY }}
   TF_VAR_CONFLUENT_CLOUD_API_SECRET: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_SECRET }}
+
+  # Tell Terraform it's running in CI/CD
+  TF_IN_AUTOMATION: true
 
 jobs:
   lint:
@@ -252,12 +253,10 @@ jobs:
 
       - name: Terraform plan
         id: plan
-        if: github.event_name == 'pull_request'
         run: terraform plan -no-color -input=false -var="confluent_cloud_api_key=$TF_VAR_CONFLUENT_CLOUD_API_KEY" -var="confluent_cloud_api_secret=$TF_VAR_CONFLUENT_CLOUD_API_SECRET"
         continue-on-error: true
 
       - uses: actions/github-script@v6
-        if: github.event_name == 'pull_request'
         env:
           PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
         with:
@@ -267,16 +266,16 @@ jobs:
             #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
             #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
             #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-
+            
             <details><summary>Show Plan</summary>
-
+            
             \`\`\`\n
             ${process.env.PLAN}
             \`\`\`
-
+            
             </details>
             *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-
+            
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -302,16 +301,16 @@ on:
       - '**/README.md'
 
 env:
-  # verbosity setting for Terraform logs
-  TF_LOG: INFO
-  # Credentials for deployment to AWS
+  # We're using AWS S3 as the Terraform backend
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  # S3 bucket for the Terraform state
-  TF_BUCKET_STATE: ${{ secrets.TF_BUCKET_STATE}}
+  TF_BUCKET_STATE: ${{ env.TF_BUCKET_STATE }}
+
   # Credentials for Confluent Cloud
   TF_VAR_CONFLUENT_CLOUD_API_KEY: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_KEY }}
   TF_VAR_CONFLUENT_CLOUD_API_SECRET: ${{ secrets.TF_VAR_CONFLUENT_CLOUD_API_SECRET }}
+
+  # Tell Terraform it's running in CI/CD
   TF_IN_AUTOMATION: true
 
 jobs:
@@ -501,14 +500,6 @@ Before committing and pushing those changes, we must allow GitHub Actions to cre
 
 With these two options enabled, our `promote` workflow will be able to create pull requests.
 
-Now, let's commit and push this code to GitHub.
-```shell
-git commit -m "Initial version"
-git remote add origin git@github.com:your_user/data-streaming-platform-pipeline.git
-git branch -M main
-git push -u origin main
-```
-
 Run the following aws CLI commands to create the S3 bucket to store the state:
 ```shell
 aws s3api create-bucket --bucket "platform-engineering-terraform-state"
@@ -525,6 +516,24 @@ Add the following entries in your GitHub repo settings, under "Secrets and Varia
 - Add a repository variable called `TF_BUCKET_STATE` set to `platform-engineering-terraform-state`.
 - Add repository secrets `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` set your AWS account API key (use a dedicated IAM user, not your root account)
 - Add repository secrets `TF_VAR_CONFLUENT_CLOUD_API_KEY` and `TF_VAR_CONFLUENT_CLOUD_API_SECRET` set to the API credentials created earlier for your `terraform-user`.
+
+Now, let's commit and push this code to GitHub.
+```shell
+git commit -m "Initial version"
+git remote add origin git@github.com:your_user/data-streaming-platform-pipeline.git
+git branch -M main
+git push -u origin main
+```
+
+Once you push, you should see the promote worfklow being run in the "Actions" tab on GitHub.
+![Promote workflow](promote-workflow.png)
+
+In the "Pull Requests" tab, you can see that a PR has been created because we pushed directly to the `main` branch. Of course, you can prevent people from pushing directly to the `main` branch if you feel this is a bit risky. If you open this PR, you can see that the only change is the addition of the `main.tf` file under the `prod` folder.
+
+![Promote PR](promote-pr.png)
+
+Merge the PR now, the CD job will trigger to terraform all the environments:
+![CD workflow](cd-workflow.png)
 
 ## Improvement Ideas
 
