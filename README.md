@@ -536,7 +536,7 @@ Add the following entries in your GitHub repo settings, under "Secrets and Varia
      - name: Get changed folder  
         id: getchange  
         run: |  
-          echo "::set-output name=folder::$(git diff --dirstat=files,0 HEAD~1..HEAD |     awk '{print $2}')"  
+          echo "folder=$(git diff --dirstat=files,0 HEAD~1..HEAD | awk '{print $2}')" >> $GITHUB_OUTPUT  
       
     - name: CD into changed folder  
      run: cd ${{ steps.getchange.outputs.folder }}
